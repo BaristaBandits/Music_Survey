@@ -21,16 +21,16 @@
   <div id="survey">
     <h3>Before we start...</h3>
     <p>Do you actively perform or practice music?</p>
-    <button onclick="startSurvey(true)">Yes</button>
-    <button onclick="startSurvey(false)">No</button>
+    <button id="yes-btn">Yes</button>
+    <button id="no-btn">No</button>
   </div>
 
+  <div id="trial-container"></div>
+
   <script>
-    // Replace with your Apps Script Web App URL
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1yE9of1RTFf8BMVrtr3IiNy5VUOiM4o0XhjfWttPT9g-nIpvYpo3SBQaZC9TYDnMmeA/exec";
 
-    // Audio file setup
-    const AUDIO_FOLDER = "audio"; // make sure SteeredSamples and UnSteeredSamples are inside this folder
+    const AUDIO_FOLDER = "audio";
     const ids = {
       "classical_electronic": {
         "steered": Array.from({length:20}, (_,i) => `${AUDIO_FOLDER}/SteeredSamples/classical_electronic_${i+1}.wav`),
@@ -50,7 +50,7 @@
       }
     };
 
-    // Build all audio pairs (steered vs unsteered)
+    // Build all audio pairs
     const AUDIO_PAIRS = [];
     Object.keys(ids).forEach(t => {
       const steered = ids[t].steered;
@@ -67,7 +67,7 @@
       }
     });
 
-    // Randomly sample 6 pairs per transition
+    // Sample 6 pairs per transition
     function samplePairs() {
       const selected = [];
       const grouped = {};
@@ -87,16 +87,21 @@
     let trial_index = 0;
     let isMusicallyKnowledgeable = false;
 
-    const surveyDiv = document.getElementById("survey");
+    // Attach event listeners to Yes/No buttons
+    document.getElementById("yes-btn").addEventListener("click", () => startSurvey(true));
+    document.getElementById("no-btn").addEventListener("click", () => startSurvey(false));
 
     function startSurvey(knowledgeable) {
       isMusicallyKnowledgeable = knowledgeable;
+      document.getElementById("survey").style.display = "none"; // hide initial question
       renderTrial();
     }
 
     function renderTrial() {
+      const trialDiv = document.getElementById("trial-container");
+
       if (trial_index >= selectedPairs.length) {
-        surveyDiv.innerHTML = `<h3>Thank you! Your responses have been recorded.</h3>`;
+        trialDiv.innerHTML = `<h3>Thank you! Your responses have been recorded.</h3>`;
         return;
       }
 
@@ -107,7 +112,7 @@
         : [{src: t.clipB, label: "A", isSteered: !t.A_is_steered},
            {src: t.clipA, label: "B", isSteered: t.A_is_steered}];
 
-      surveyDiv.innerHTML = `
+      trialDiv.innerHTML = `
         <h3>Trial ${trial_index + 1} / ${selectedPairs.length}</h3>
         <h4>Transition: ${t.transition}</h4>
 
@@ -119,59 +124,50 @@
 
         <div id="question">
           <p>Which clip sounds more like a <b>fusion</b> of the two genres?</p>
-          <button onclick="submitResponse('${clips[0].label}', ${clips[0].isSteered})">Clip A</button>
-          <button onclick="submitResponse('${clips[1].label}', ${clips[1].isSteered})">Clip B</button>
+          <button id="btnA">Clip A</button>
+          <button id="btnB">Clip B</button>
         </div>
       `;
+
+      document.getElementById("btnA").addEventListener("click", () => submitResponse(clips[0].label, clips[0].isSteered));
+      document.getElementById("btnB").addEventListener("click", () => submitResponse(clips[1].label, clips[1].isSteered));
     }
 
-    async function submitResponse(choiceLabel, choiceIsSteered) {
-  const t = selectedPairs[trial_index];
+    function submitResponse(choiceLabel, choiceIsSteered) {
+      const t = selectedPairs[trial_index];
 
-  const data = {
-    participant_id,
-    musically_knowledgeable: isMusicallyKnowledgeable,
-    trial_index: trial_index + 1,
-    transition: t.transition,
-    pair_id: t.pair_id,
-    choice: choiceLabel,
-    choice_is_steered: choiceIsSteered
-  };
+      const data = {
+        participant_id,
+        musically_knowledgeable: isMusicallyKnowledgeable,
+        trial_index: trial_index + 1,
+        transition: t.transition,
+        pair_id: t.pair_id,
+        choice: choiceLabel,
+        choice_is_steered: choiceIsSteered
+      };
 
-  // Disable buttons immediately
-  const buttons = document.querySelectorAll("#question button");
-  buttons.forEach(b => b.disabled = true);
+      // Disable buttons immediately
+      document.getElementById("btnA").disabled = true;
+      document.getElementById("btnB").disabled = true;
 
-  // Show loading message
-  document.getElementById("question").innerHTML = `<p>Loading next pair… ⏳</p>`;
+      // Show loading message
+      document.getElementById("question").innerHTML = `<p>Loading next pair… ⏳</p>`;
 
-  // Send data
-  await fetch(GOOGLE_SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify(data)
-  });
-
-  // Small pause before loading next trial
-  setTimeout(() => {
-    trial_index++;
-    renderTrial();
-  }, 1000); // 1-second pause
-}
-
-
-
-      await fetch(GOOGLE_SCRIPT_URL, {
+      // Send data (no-cors)
+      fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(data)
       });
 
-      trial_index++;
-      renderTrial();
+      // Small pause before next trial
+      setTimeout(() => {
+        trial_index++;
+        renderTrial();
+      }, 1000);
     }
   </script>
 </body>
 </html>
+
