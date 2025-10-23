@@ -126,17 +126,37 @@
     }
 
     async function submitResponse(choiceLabel, choiceIsSteered) {
-      const t = selectedPairs[trial_index];
+  const t = selectedPairs[trial_index];
 
-      const data = {
-        participant_id,
-        musically_knowledgeable: isMusicallyKnowledgeable,
-        trial_index: trial_index + 1,
-        transition: t.transition,
-        pair_id: t.pair_id,
-        choice: choiceLabel,
-        choice_is_steered: choiceIsSteered
-      };
+  const data = {
+    participant_id,
+    musically_knowledgeable: isMusicallyKnowledgeable,
+    trial_index: trial_index + 1,
+    transition: t.transition,
+    pair_id: t.pair_id,
+    choice: choiceLabel,
+    choice_is_steered: choiceIsSteered
+  };
+
+  // Disable buttons immediately
+  const buttons = document.querySelectorAll("#question button");
+  buttons.forEach(b => b.disabled = true);
+
+  // Send data
+  await fetch(GOOGLE_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)
+  });
+
+  // Small pause before loading next trial
+  setTimeout(() => {
+    trial_index++;
+    renderTrial();
+  }, 1000); // 1000 ms = 1 second pause
+}
+
 
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
