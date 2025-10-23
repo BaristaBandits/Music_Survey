@@ -142,6 +142,9 @@
   const buttons = document.querySelectorAll("#question button");
   buttons.forEach(b => b.disabled = true);
 
+  // Show loading message
+  document.getElementById("question").innerHTML = `<p>Loading next pair… ⏳</p>`;
+
   // Send data
   await fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
@@ -154,8 +157,9 @@
   setTimeout(() => {
     trial_index++;
     renderTrial();
-  }, 1000); // 1000 ms = 1 second pause
+  }, 1000); // 1-second pause
 }
+
 
 
       await fetch(GOOGLE_SCRIPT_URL, {
