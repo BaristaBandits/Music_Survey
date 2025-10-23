@@ -87,7 +87,7 @@
     let trial_index = 0;
     let isMusicallyKnowledgeable = false;
 
-    // Attach event listeners to Yes/No buttons
+    // Yes/No buttons
     document.getElementById("yes-btn").addEventListener("click", () => startSurvey(true));
     document.getElementById("no-btn").addEventListener("click", () => startSurvey(false));
 
@@ -150,10 +150,7 @@
       document.getElementById("btnA").disabled = true;
       document.getElementById("btnB").disabled = true;
 
-      // Show loading message
-      document.getElementById("question").innerHTML = `<p>Loading next pair… ⏳</p>`;
-
-      // Send data (no-cors)
+      // Send data
       fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
@@ -161,12 +158,11 @@
         body: JSON.stringify(data)
       });
 
-      // Small pause before next trial
-      setTimeout(() => {
-        trial_index++;
-        renderTrial();
-      }, 1000);
+      // Immediately load next trial
+      trial_index++;
+      renderTrial();
     }
   </script>
 </body>
 </html>
+
